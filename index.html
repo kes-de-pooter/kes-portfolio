@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GLB Book View</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="hint">click to open the book</div>
+
+<div id="infoButton">ⓘ</div>
+
+<div id="infoModal">
+  <div id="infoContent">
+    <button id="closeInfo">✕</button>
+    <h2>How to use</h2>
+    <p> Use the "previous" and "next" buttons below the book to flip through the pages.</p>
+    <p> Click on images to enlarge them. and the X button to close the image</p>
+    <i>  - currently updated to module 3</i>
+  </div>
+</div>
+
+  <div id="bookOverlay">
+    <div id="spread">
+      <div class="page left">
+        <div class="pageContent">
+          <div class="pageLabel" id="leftLabel"></div>
+          <h2 class="pageTitle" id="leftTitle"></h2>
+          <div class="pageText" id="leftText"></div>
+        </div>
+        <div class="pageNumber" id="leftNumber"></div>
+      </div>
+
+      <div class="page right">
+        <div class="pageContent">
+          <div class="pageLabel" id="rightLabel"></div>
+          <h2 class="pageTitle" id="rightTitle"></h2>
+          <div class="pageText" id="rightText"></div>
+        </div>
+        <div class="pageNumber" id="rightNumber"></div>
+      </div>
+    </div>
+
+    <div class="navControls">
+      <button id="prevSpread">Previous</button>
+      <button id="nextSpread">Next</button>
+    </div>
+  </div>
+
+  <div id="imageModal">
+    <button id="closeModal" type="button">✕</button>
+    <img id="modalImage" src="" alt="Full image" />
+  </div>
+
+<script type="module">
+  import * as THREE from "three";
+  import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x202020);
+
+  const camera = new THREE.PerspectiveCamera(
+    45,
+    window.innerWidth / window.innerHeight,
+    0.01,
+    1000
+  );
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  document.body.appendChild(renderer.domElement);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
+  directionalLight.position.set(4, 6, 3);
+  scene.add(directionalLight);
+
+  const loader = new GLTFLoader();
+  const clock = new THREE.Clock();
+
+  let model = null;
+  let mixer = null;
+  let animations = [];
+  let hasStarted = false;
+  let shouldMoveView = false;
+  let overlayVisible = false;
+
+  let animationStartTime = 0;
+  let maxAnimationDuration = 0;
+
+  const lookTarget = new THREE.Vector3(0, 0, 0);
+  const startCameraPosition = new THREE.Vector3();
+  const startLookTarget = new THREE.Vector3();
+  const targetCameraPosition = new THREE.Vector3();
+  const targetLookTarget = new THREE.Vector3();
+
+  const hint = document.getElementById("hint");
+  const bookOverlay = document.getElementById("bookOverlay");
+
+  const leftLabel = document.getElementById("leftLabel");
+  const leftTitle = document.getElementById("leftTitle");
+  const leftText = document.getElementById("leftText");
+  const leftNumber = document.getElementById("leftNumber");
+
+  const rightLabel = document.getElementById("rightLabel");
+  const rightTitle = document.getElementById("rightTitle");
+  const rightText = document.getElementById("rightText");
+  const rightNumber = document.getElementById("rightNumber");
+
+  const prevSpread = document.getElementById("prevSpread");
+  const nextSpread = document.getElementById("nextSpread");
+
+  const imageModal = document.getElementById("imageModal");
+  const modalImage = document.getElementById("modalImage");
+  const closeModal = document.getElementById("closeModal");
+
+  const infoButton = document.getElementById("infoButton");
+  const infoModal = document.getElementById("infoModal");
+  const closeInfo = document.getElementById("closeInfo");
+
+  const pages = [
+    {
+      label: "Page 1",
+      title: "Home",
+      content: `
+        <p>Welcome to my portfolio book.</p>
+        <p>This portfolio gives a quick overview of who I am, what I make and the projects I worked on.</p>
+        <div class="indexList">
+          <div class="indexItem"><span>Home</span><span>1</span></div>
+          <div class="indexItem"><span>About Me</span><span>2</span></div>
+          <div class="indexItem"><span>Projects</span><span>3</span></div>
+          <div class="indexItem"><span>Module 1 </span><span>4</span></div>
+          <div class="indexItem"><span>Module 2</span><span>9</span></div>
+          <div class="indexItem"><span>Module 3</span><span>14</span></div>
+        </div>
+      `
+    },
+    {
+      label: "Page 2",
+      title: "About Me",
+      content: `
+        <p>Hello! My name is Kes de Pooter.</p>
+        <p>As a first-year Creative Technology student at Vrije Universiteit Amsterdam, I enjoy working on innovative digital solutions. My focus is on design, innovation, and creativity.</p>
+        <p>After completing my first year of HBO-ICT (Cyber Security) at the HvA, I developed a solid technical foundation in Python, JavaScript, HTML/CSS, and Processing.</p>
+        <p>I enjoy combining these skills in projects that bring technology and design together.</p>
+      `
+    },
+    {
+      label: "Page 3",
+      title: "Projects",
+      content: `
+        <p>Select a module to view the projects.</p>
+        <div class="projectButtons">
+          <button class="paperButton" data-page="3">Module 1</button>
+          <button class="paperButton" data-page="9">Module 2</button>
+          <button class="paperButton" data-page="14">Module 3</button>
+        </div>
+      `
+    },
+    {
+      label: "Page 4",
+      title: "Module 1 Overview",
+      content: `
+        <p>This section contains my projects from Module 1.</p>
+        <div class="projectButtons">
+          <button class="paperButton" data-page="4">Behavioural Change Poster</button>
+          <button class="paperButton" data-page="5">Creature Assignment</button>
+          <button class="paperButton" data-page="6">Window Shop</button>
+          <button class="paperButton" data-page="7">Hackathon</button>
+        </div>
+      `
+    },
+    {
+      label: "Page 5",
+      title: "Behavioural Change Poster",
+      content: `
+        <div class="singleProjectPage">
+          <img src="poster_bahaviour_M1.png" alt="Behavioural Change Poster" class="singleProjectRealImage clickableImage">
+          <div class="singleProjectText">
+            <p><strong>Course:</strong> Design for Behavioural Change</p>
+            <p><strong>Assignment:</strong> Create a behavioural change poster.</p>
+            <p><strong>Description:</strong> assignment in first module, for the course design for bahavioural change. This poster is againt using your phone while driving.</p>
+          </div>
+        </div>
+      `
+    },
+    {
+      label: "Page 6",
+      title: "Creature Assignment",
+      content: `
+        <div class="singleProjectPage">
+          <img src="owl_game_M1.png" alt="Creature Assignment" class="singleProjectRealImage clickableImage">
+          <div class="singleProjectText">
+            <p><strong>Course:</strong> Programming</p>
+            <p><strong>Assignment:</strong> Create an interactive creature-based project.</p>
+            <p><strong>Description:</strong> assignment in first module, for the course 'programming', This is a game where you have to grab a mouse and feed it to the owl by bringing it back to the owl house in the tree.</p>
+          </div>
+        </div>
+      `
+    },
+    {
+      label: "Page 7",
+      title: "Window Shop",
+      content: `
+        <div class="singleProjectPage">
+          <img src="Shop_window_M1.png" alt="Window Shop" class="singleProjectRealImage clickableImage">
+          <div class="singleProjectText">
+            <p><strong>Course:</strong> Programming</p>
+            <p><strong>Assignment:</strong> Build an interactive shop window.</p>
+            <p><strong>Description:</strong> assignment in first module, for the course 'programming', this is an coded window shop where you can interact with certain pieces of the program by clicking on it.</p>
+          </div>
+        </div>
+      `
+    },
+    {
+      label: "Page 8",
+      title: "Hackathon",
+      content: `
+        <div class="singleProjectPage">
+          <img src="Frankenstein_M1.png" alt="Hackathon Project" class="singleProjectRealImage clickableImage">
+          <div class="singleProjectText">
+            <p><strong>Project:</strong> frankenstein omni-thermin</p>
+            <p><strong>Assignment:</strong> Hackathon group project.</p>
+            <p><strong>Description:</strong> for our hackathon assignment, we decided to recreate a thermin music machine, meaning you can make music by moving your hand in the air. i mostly worked on the design, creating the box and 3d print in fusion.</p>
+          </div>
+        </div>
+      `
+    },
+    {
+  label: "Page 9",
+  title: "Module 2 Overview",
+  content: `
+    <p>This section contains my projects from Module 2.</p>
+    <div class="projectButtons">
+      <button class="paperButton" data-page="9">Blender: Japanese House</button>
+      <button class="paperButton" data-page="10">Processing: Birthday Card</button>
+      <button class="paperButton" data-page="11">Smart Environment Project</button>
+      <button class="paperButton" data-page="12">ProvDev Challenge</button>
+    </div>
+  `
+},
+{
+  label: "Page 10",
+  title: "Blender: Japanese House",
+  content: `
+    <div class="singleProjectPage">
+
+      <div class="twoImageGrid">
+        <img src="japnesese_outside_M2.png" class="clickableImage twoImage" />
+        <img src="japenese_inside_M2.png" class="clickableImage twoImage" />
+      </div>
+
+      <div class="singleProjectText">
+        <p><strong>Course:</strong> Interactive Visuals</p>
+        <p><strong>Description:</strong> A1 for intreractive visualization, where we had to recreate a japanese house, using blender. And afterwards we had to make it an interactive game using unity.</p>
+        <p><strong>Link to published game:</strong></p>
+        <p><a href="https://kes-de-pooter.itch.io/japanese-house" target="_blank">https://kes-de-pooter.itch.io/japanese-house</a></p>
+      </div>
+    </div>
+  `
+},
+{
+  label: "Page 11",
+  title: "Processing: Birthday Card",
+  content: `
+    <div class="singleProjectPage">
+      <img src="birthday_card_M2.png" alt="Processing Birthday Card" class="singleProjectRealImage clickableImage">
+      <div class="singleProjectText">
+        <p><strong>Course:</strong> Programming</p>
+        <p><strong>Project:</strong> Birthday Card</p>
+        <p><strong>Description:</strong>assignment in second module, for the course 'programming', this is a birthday card where te letters explode, using pixel interaction which has a flashlight effect to the letter, which will illiuminate the card in the background</p>
+      </div>
+    </div>
+  `
+},
+{
+  label: "Page 12",
+  title: "Smart Environment Project",
+  content: `
+    <div class="singleProjectPage">
+      <img src="Project_M2.jpeg" alt="portfolio" class="singleProjectRealImage clickableImage">
+      <div class="singleProjectText">
+        <p><strong>Project:</strong> Heating system and Size Detector</p>
+        <p><strong>Description:</strong> for the smart envoironment project i worked with a group to solve packagin waste in food delivery, to do this we made a device which detects the sizer of a food item so it can match a matching packagin size to it. additionally we also added a heating sleeve to it to make it more smart.</p>
+      </div>
+    </div>
+  `
+},
+{
+  label: "Page 13",
+  title: "ProvDev Challenge",
+  content: `
+    <div class="singleProjectPage">
+      
+      <div class="singleProjectText">
+        <p><strong>Project:</strong> ProvDev Challenge: Game Storytelling</p>
+        <p><strong>Description:</strong> For my ProvDev challenge this module, I learned more about storytelling and how to set up a world and characters for a story.</p>
+      </div>
+    </div>
+  `
+},
+{
+  label: "Page 14",
+  title: "Module 3 Overview",
+  content: `
+    <p>This section contains my projects from Module 3.</p>
+    <div class="projectButtons">
+      <button class="paperButton" data-page="14">Animated Book</button>
+      <button class="paperButton" data-page="15">Research Poster</button>
+      <button class="paperButton" data-page="16">Project Rijksmuseum</button>
+    </div>
+  `
+},  
+{
+  label: "Page 15",
+  title: "Animated Book",
+  content: `
+    <div class="singleProjectPage">
+      <img src="animated_book_M3.png" alt="animated book" class="singleProjectRealImage clickableImage">
+      <div class="singleProjectText">
+        <p><strong>Course:</strong> ProfDev</p>
+        <p><strong>Project:</strong> Animated Book</p>
+        <p><strong>Description:</strong> To create this portfolio for profdev, i created a animated book using Blender. First i made the book itself and then i used a Youtube tutorial to create the animation, improvising in certain parts to make it match the vibe of my portfolio.</p>
+
+      </div>
+    </div>
+  `
+},
+{
+  label: "Page 16",
+  title: "Research Poster",
+  content: `
+    <div class="singleProjectPage">
+      <img src="research_poster_M3.png" alt="research poster" class="singleProjectRealImage clickableImage">
+      <div class="singleProjectText">
+        <p><strong>Course:</strong> technology & society</p>
+        <p><strong>Project:</strong> Research Poster</p>
+        <p><strong>Description:</strong> for the course 'technology & society', i designed and wrote a research poster  with a team of 3 people, about the impact of Artificial Intelligence on the media, focusing on deepfakes andthe impact on political and societal issues.</p>
+      </div>
+    </div>
+  `
+},
+{
+  label: "Page 17",
+  title: "Project Rijksmuseum",
+  content: `
+    <div class="singleProjectPage">
+      <img src="project_rijksmuseum_M3.jpeg" alt="Rijksmuseum project" class="singleProjectRealImage clickableImage">
+      <div class="singleProjectText">
+        <p><strong>Course:</strong> Living and working tomorrow project</p>
+        <p><strong>Project:</strong> Rijksmuseum project</p>
+        <p><strong>Description:</strong> for the project of Module 3 we have to make a prototype concept for the Rijksmuseum which makes the information boards near artworks, more personalised and engaging. For this we made a system where you can scan a bracelet to a ipad which will result in personalised text appearing on the screen.</p>
+      </div>
+    </div>
+  `
+}
+  ];
+
+  let currentSpread = 0;
+
+  function setupPageButtons() {
+    document.querySelectorAll("[data-page]").forEach((button) => {
+      button.onclick = () => {
+        const pageIndex = Number(button.dataset.page);
+        currentSpread = Math.floor(pageIndex / 2);
+        renderSpread();
+      };
+    });
+  }
+
+  function setupImageClicks() {
+    document.querySelectorAll(".clickableImage").forEach((img) => {
+      img.onclick = (event) => {
+        event.stopPropagation();
+        modalImage.src = img.src;
+        modalImage.alt = img.alt;
+        imageModal.style.display = "flex";
+      };
+    });
+  }
+
+  function renderSpread() {
+    const leftPageIndex = currentSpread * 2;
+    const rightPageIndex = leftPageIndex + 1;
+
+    const leftPage = pages[leftPageIndex];
+    const rightPage = pages[rightPageIndex];
+
+    if (leftPage) {
+      leftLabel.textContent = leftPage.label;
+      leftTitle.textContent = leftPage.title;
+      leftText.innerHTML = leftPage.content;
+      leftNumber.textContent = leftPageIndex + 1;
+    } else {
+      leftLabel.textContent = "";
+      leftTitle.textContent = "";
+      leftText.innerHTML = "";
+      leftNumber.textContent = "";
+    }
+
+    if (rightPage) {
+      rightLabel.textContent = rightPage.label;
+      rightTitle.textContent = rightPage.title;
+      rightText.innerHTML = rightPage.content;
+      rightNumber.textContent = rightPageIndex + 1;
+    } else {
+      rightLabel.textContent = "";
+      rightTitle.textContent = "";
+      rightText.innerHTML = "";
+      rightNumber.textContent = "";
+    }
+
+    prevSpread.disabled = currentSpread === 0;
+    nextSpread.disabled = rightPageIndex >= pages.length - 1;
+
+    setupPageButtons();
+    setupImageClicks();
+  }
+
+  function showOverlay() {
+    if (overlayVisible) return;
+    overlayVisible = true;
+    bookOverlay.style.display = "block";
+    renderSpread();
+  }
+
+  closeModal.addEventListener("click", (event) => {
+    event.stopPropagation();
+    imageModal.style.display = "none";
+    modalImage.src = "";
+  });
+
+  imageModal.addEventListener("click", (event) => {
+    if (event.target === imageModal) {
+      imageModal.style.display = "none";
+      modalImage.src = "";
+    }
+  });
+
+  infoButton.onclick = () => {
+  infoModal.style.display = "flex";
+};
+
+closeInfo.onclick = () => {
+  infoModal.style.display = "none";
+};
+
+infoModal.onclick = (e) => {
+  if (e.target === infoModal) {
+    infoModal.style.display = "none";
+  }
+};
+
+  loader.load(
+    "./animated.book.final2.glb",
+    function (gltf) {
+      model = gltf.scene;
+      scene.add(model);
+
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+
+      model.position.sub(center);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const distance = maxDim * 2.4;
+
+      camera.position.set(
+        distance * 0.0,
+        distance * 0.82,
+        -distance * 0.05
+      );
+
+      lookTarget.set(0, 0, 0);
+      camera.lookAt(lookTarget);
+
+      startCameraPosition.copy(camera.position);
+      startLookTarget.copy(lookTarget);
+
+      const shiftX = -maxDim * -0.35;
+
+      targetCameraPosition.copy(startCameraPosition);
+      targetCameraPosition.x += shiftX;
+
+      targetLookTarget.copy(startLookTarget);
+      targetLookTarget.x += shiftX;
+
+      camera.near = Math.max(0.01, maxDim / 100);
+      camera.far = maxDim * 20;
+      camera.updateProjectionMatrix();
+
+      animations = gltf.animations || [];
+      console.log("Animaties gevonden:", animations);
+
+      maxAnimationDuration = 0;
+
+      if (animations.length > 0) {
+        mixer = new THREE.AnimationMixer(model);
+
+        animations.forEach((clip, index) => {
+          console.log(index, clip.name, clip.duration);
+          maxAnimationDuration = Math.max(maxAnimationDuration, clip.duration);
+        });
+      } else {
+        hint.textContent = "Geen animaties gevonden";
+      }
+    },
+    function (xhr) {
+      if (xhr.total) {
+        console.log(((xhr.loaded / xhr.total) * 100).toFixed(1) + "% geladen");
+      }
+    },
+    function (error) {
+      console.error("Laad fout:", error);
+    }
+  );
+
+  function playAllAnimationsOnce() {
+    if (!mixer || animations.length === 0 || hasStarted) return;
+
+    hasStarted = true;
+    shouldMoveView = true;
+    animationStartTime = performance.now();
+
+    animations.forEach((clip) => {
+      const action = mixer.clipAction(clip);
+      action.reset();
+      action.setLoop(THREE.LoopOnce, 1);
+      action.clampWhenFinished = true;
+      action.play();
+    });
+
+    hint.style.display = "none";
+  }
+
+  window.addEventListener("click", (event) => {
+    if (event.target.closest(".page")) return;
+    if (event.target.closest(".navControls")) return;
+    if (event.target.closest("#imageModal")) return;
+    playAllAnimationsOnce();
+  });
+
+  prevSpread.addEventListener("click", () => {
+    if (currentSpread > 0) {
+      currentSpread--;
+      renderSpread();
+    }
+  });
+
+  nextSpread.addEventListener("click", () => {
+    const maxSpread = Math.ceil(pages.length / 2) - 1;
+    if (currentSpread < maxSpread) {
+      currentSpread++;
+      renderSpread();
+    }
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const delta = clock.getDelta();
+
+    if (mixer) {
+      mixer.update(delta);
+    }
+
+    if (shouldMoveView) {
+      camera.position.lerp(targetCameraPosition, 0.015);
+      lookTarget.lerp(targetLookTarget, 0.015);
+
+      if (
+        camera.position.distanceTo(targetCameraPosition) < 0.01 &&
+        lookTarget.distanceTo(targetLookTarget) < 0.01
+      ) {
+        camera.position.copy(targetCameraPosition);
+        lookTarget.copy(targetLookTarget);
+        shouldMoveView = false;
+      }
+    }
+
+    const overlayDelayMs = (maxAnimationDuration * 1000 * 0.88) + 150;
+
+    if (
+      hasStarted &&
+      !overlayVisible &&
+      !shouldMoveView &&
+      performance.now() - animationStartTime >= overlayDelayMs
+    ) {
+      showOverlay();
+    }
+
+    camera.lookAt(lookTarget);
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+</body>
+</html>
