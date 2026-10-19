@@ -25,7 +25,7 @@
     <h2>How to use</h2>
     <p> Use the "previous" and "next" buttons below the book to flip through the pages.</p>
     <p> Click on images to enlarge them. and the X button to close the image</p>
-    <i>  - currently updated to module 3</i>
+    <i>  - currently updated to module 5</i>
   </div>
 </div>
 
@@ -145,6 +145,7 @@
           <div class="indexItem"><span>Module 2</span><span>9</span></div>
           <div class="indexItem"><span>Module 3</span><span>14</span></div>
           <div class="indexItem"><span>Module 4</span><span>18</span></div>
+          <div class="indexItem"><span>Module 5</span><span>21</span></div>
         </div>
       `
     },
@@ -167,6 +168,8 @@
           <button class="paperButton" data-page="3">Module 1</button>
           <button class="paperButton" data-page="9">Module 2</button>
           <button class="paperButton" data-page="14">Module 3</button>
+          <button class="paperButton" data-page="18">Module 4</button>
+          <button class="paperButton" data-page="21">Module 5</button>
         </div>
       `
     },
@@ -389,20 +392,218 @@
       </div>
     </div>
   `
-}, {
+},
+{
   label: "Page 20",
   title: "under pressure project",
   content: `
     <div class="singleProjectPage">
-      <img src="under_pressure_project_M4.jpeg" alt="under pressure project" class="singleProjectRealImage clickableImage">
+
+      <div class="twoImageGrid">
+        <img
+          src="under_pressure_project_M4_img.jpeg"
+          alt="Under Pressure Project"
+          class="clickableImage twoImage"
+        />
+
+        <video
+          class="twoImage"
+          controls
+          playsinline
+          preload="metadata"
+        >
+          <source
+            src="under_pressure_project_M4.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support video playback.
+        </video>
+      </div>
+
       <div class="singleProjectText">
         <p><strong>Course:</strong> Living and working tomorrow project</p>
         <p><strong>Project:</strong> under pressure project</p>
         <p><strong>Description:</strong> for the project of Module 4 we came up with a concept for an interactive installation that explores the theme of pressure and continues questioning. in this program you undergo a VR experience where you are being asked questions non-stop. until the point you have a black out.</p>
       </div>
+
+    </div>
+  `
+},
+{
+  label: "Page 21",
+  title: "Module 5 Overview",
+  content: `
+    <p>This section contains my projects from Module 5.</p>
+    <div class="projectButtons">
+      <button class="paperButton" data-page="22">Mechanic walker</button>
+      <button class="paperButton" data-page="23">GameJam game</button>
+      <button class="paperButton" data-page="24">3DMA Final project</button>
+      <button class="paperButton" data-page="24">GETXR Final project</button>
+      <button class="paperButton" data-page="24">IMDEV Final project</button>
+    </div>
+  `
+}, 
+{
+  label: "Page 22",
+  title: "Mechanic walker",
+  content: `
+    <div class="singleProjectPage">
+
+      <video
+        class="singleProjectRealImage"
+        controls
+        playsinline
+        preload="metadata"
+        style="width: 100%; height: auto; object-fit: contain;"
+      >
+        <source
+          src="A4_Walker_KesdePooter.mp4"
+          type="video/mp4"
+        />
+        Your browser does not support video playback.
+      </video>
+
+      <div class="singleProjectText">
+        <p><strong>Course:</strong> 3DMA</p>
+        <p><strong>Project:</strong> Mechanic Walker</p>
+        <p><strong>Description:</strong> The mechanical walker was an assignment for the course 3DMA within IM. First, I had to make the model in Blender, and then for a later assignment I had to animate it in Blender. I'm very happy with the result.</p>
+      </div>
+
     </div>
   `
 }
+,
+
+{
+  label: "Page 23",
+  title: "GameJam game",
+  content: `
+    <div class="singleProjectPage">
+
+      <video
+        class="singleProjectRealImage"
+        controls
+        playsinline
+        preload="metadata"
+        style="width: 100%; height: auto; object-fit: contain;"
+      >
+        <source
+          src="gamejam_game_M5.mp4"
+          type="video/mp4"
+        />
+        Your browser does not support video playback.
+      </video>
+
+      <div class="singleProjectText">
+        <p><strong>Course:</strong> IMDEV</p>
+        <p><strong>Project:</strong> GameJam game</p>
+        <p><strong>Description:</strong> A game I made together with a team of 4 in a period of 2 days during the GameJam event. This game is a cooperative platform game where both players have a power: one can draw lines which they will need, and the other has a shield to protect themselves from enemies.</p>
+      </div>
+
+    </div>
+  `
+}
+,  {
+  label: "Page 24",
+  title: "3DMA Final project",
+  content: `
+    <div class="singleProjectPage">
+<div class="twoImageGrid">
+        <img
+          src="3dma_final_project_M5.jpg"
+          alt="3DMA Final project"
+          class="clickableImage twoImage"
+        />
+
+        <video
+          class="twoImage"
+          controls
+          playsinline
+          preload="metadata"
+        >
+          <source
+            src="3dma_final_project_M5.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support video playback.
+        </video>
+      </div>
+      <div class="singleProjectText">
+        <p><strong>Course:</strong> 3DMA</p>
+        <p><strong>Project:</strong> 3DMA Final project</p>
+        <p><strong>Description:</strong> The 3DMA Final project was a assignment which was part of the final project of the module where i had to claim a part of the project that i would take responsibility for, i made two playable characters that were had simple animations.</p>
+      </div>
+    </div>
+  `
+},{
+  label: "Page 25",
+  title: "GETXR Final project",
+  content: `
+    <div class="singleProjectPage">
+<div class="twoImageGrid">
+        <img
+          src="getxr_final_project_M5.jpg"
+          alt="GETXR Final project"
+          class="clickableImage twoImage"
+        />
+
+        <video
+          class="twoImage"
+          controls
+          playsinline
+          preload="metadata"
+        >
+          <source
+            src="getxr_final_project_M5.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support video playback.
+        </video>
+      </div>
+      <div class="singleProjectText">
+        <p><strong>Course:</strong> GETXR</p>
+        <p><strong>Project:</strong> GETXR Final project</p>
+        <p><strong>Description:</strong> The GETXR Final project was a assignment which was part of the final project of the module where i had to claim a part of the project that i would take responsibility for, i made the two playable characters that I made for the 3DMA final project and made them playable within unity, allowing them to walk and hand over the pizza which is a core mechanic of the game</p>
+      </div>
+    </div>
+  `
+},{
+  label: "Page 26",
+  title: "IMDEV Final project",
+  content: `
+    <div class="singleProjectPage">
+<div class="twoImageGrid">
+        <img
+          src="imdev_final_project_M5.jpg"
+          alt="IMDEV Final project"
+          class="clickableImage twoImage"
+        />
+
+        <video
+          class="twoImage"
+          controls
+          playsinline
+          preload="metadata"
+        >
+          <source
+            src="imdev_final_project_M5.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support video playback.
+        </video>
+      </div>
+      <div class="singleProjectText">
+        <p><strong>Course:</strong> IMDEV</p>
+        <p><strong>Project:</strong> IMDEV Final project</p>
+        <p><strong>Description:</strong> The IMDEV Final project that i made together with a team of 4, it is a game about two human pizza deliverers that have to deliver pizzas to monsters, while avoiding dangers and navigating a complicated town. each player has their own special abilities.</p>
+      </div>
+    </div>
+  `
+}
+
+
+
+
   ];
 
   let currentSpread = 0;
